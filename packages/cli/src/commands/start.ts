@@ -30,15 +30,15 @@ function launchDesktop(): void {
   const desktopDir = path.join(workspaceRoot, 'packages', 'desktop');
   const mainScript = path.join(desktopDir, 'dist', 'main.js');
   const electronBin = process.platform === 'win32'
-    ? path.join(workspaceRoot, 'node_modules', 'electron', 'dist', 'electron.exe')
-    : path.join(workspaceRoot, 'node_modules', '.bin', 'electron');
+    ? path.join(desktopDir, 'node_modules', 'electron', 'dist', 'electron.exe')
+    : path.join(desktopDir, 'node_modules', '.bin', 'electron');
 
   if (!existsSync(mainScript)) {
     throw new Error('Desktop build not found. Run pnpm --filter @genie-ai/desktop build first.');
   }
 
   if (!existsSync(electronBin)) {
-    throw new Error('Electron binary not found. Run pnpm install --ignore-scripts, then node node_modules/electron/install.js.');
+    throw new Error(`Electron binary not found at ${electronBin}. Please make sure you have run pnpm install.`);
   }
 
   const child = spawn(electronBin, [mainScript], {
