@@ -12,7 +12,7 @@
     "dev": "tsx watch src/server.ts"
   },
   "dependencies": {
-    "@genie-ai/core": "file:../core",
+    "@genie-ai/core": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {

@@ -8,7 +8,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@genie-ai/core": "file:../core",
+    "@genie-ai/core": "workspace:*",
     "adm-zip": "^0.5.17",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.0",
