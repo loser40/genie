@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GENIE — AI Maintainability System</title>
+<meta name="description" content="Software is a Wish. GENIE is the Command."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@1,300;1,500;1,600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RESET & ROOTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04010d;
+  --purple:#7c3aed;
+  --purple-l:#a78bfa;
+  --purple-d:#c4b5fd;
+  --gold:#f4a825;
+  --gold-l:#ffd166;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --fd:'Cinzel',serif;
+  --fn:'JetBrains Mono',monospace;
+  --fi:'Cormorant Garamond',serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--fn);overflow-x:hidden}
+::selection{background:rgba(124,58,237,.3);color:var(--purple-d)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.5);border-radius:2px}
+
+/* noise grain */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");background-size:200px;opacity:.55;pointer-events:none;z-index:9999;mix-blend-mode:overlay}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NAV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.2rem 2.5rem;display:flex;align-items:center;justify-content:space-between;transition:background .4s,border .4s}
+nav.scrolled{background:rgba(4,1,13,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(124,58,237,.12)}
+.nav-logo{font-family:var(--fd);font-size:1.1rem;letter-spacing:.15em;background:linear-gradient(90deg,var(--gold-l),var(--purple-d));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:2.5rem}
+.nav-links a{font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:rgba(167,139,250,.5);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--purple-l)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HERO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#hero{position:relative;width:100%;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+
+/* Stars canvas — fixed behind everything */
+#stars-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* Hero background photo */
+.hero-bg{position:absolute;inset:-10%;width:120%;height:120%;object-fit:cover;z-index:1;opacity:0;will-change:transform,opacity}
+
+/* atmospheric fog */
+#fog{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:
+    radial-gradient(ellipse 55% 40% at 50% 100%,rgba(91,33,182,.6) 0%,transparent 70%),
+    radial-gradient(ellipse 80% 25% at 50% 110%,rgba(124,58,237,.25) 0%,transparent 70%),
+    radial-gradient(ellipse 30% 30% at 50% 50%,rgba(49,10,100,.12) 0%,transparent 70%);
+}
+
+/* Holo floating symbols */
+.holo-layer{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.h-sym{position:absolute;color:rgba(167,139,250,.1);font-family:var(--fn);font-size:1rem;animation:sym-float linear infinite;user-select:none}
+@keyframes sym-float{0%{opacity:0;transform:translateY(20px)}10%{opacity:.15}90%{opacity:.08}100%{opacity:0;transform:translateY(-60px)}}
+
+/* ── HERO LAYERS ── */
+.hero-layer{position:absolute;inset:0;pointer-events:none;will-change:transform;display:flex;align-items:center;justify-content:center}
+
+/* LAMP — z3, bottom anchor, THIRD to appear */
+#layer-lamp{z-index:3;align-items:flex-end;padding-bottom:4vh;opacity:0}
+#layer-lamp img{
+  height:clamp(160px,32vh,320px);
+  object-fit:contain;
+  filter:drop-shadow(0 0 0px rgba(244,168,37,0));
+  will-change:filter,transform;
+}
+
+/* GENIE — z4, center, SECOND to appear */
+#layer-genie{z-index:4;opacity:0;transform:translateY(80px) scale(0.7)}
+#layer-genie img{
+  height:clamp(320px,72vh,640px);
+  object-fit:contain;
+  filter:drop-shadow(0 0 0px rgba(91,33,182,0));
+  will-change:filter,transform;
+}
+
+/* HANDS — z5, top, FIRST to appear */
+#layer-hands{z-index:5;align-items:flex-start;padding-top:0;opacity:0;transform:translateY(-220px)}
+#layer-hands img{
+  width:clamp(320px,82vw,960px);
+  object-fit:contain;
+  filter:drop-shadow(0 0 0px rgba(91,33,182,0));
+  will-change:filter,transform;
+}
+
+/* SVG Strings — z6, hidden initially */
+#strings-svg{position:absolute;inset:0;z-index:6;pointer-events:none;width:100%;height:100%;opacity:0}
+.str{fill:none;stroke-width:1.4;stroke:rgba(196,168,255,.5);filter:url(#sg)}
+.str-glow{fill:none;stroke-width:3;stroke:rgba(147,51,234,.15);filter:url(#sg)}
+
+/* Eye glow — z7 */
+.eye-wrap{position:absolute;z-index:7;pointer-events:none;top:42vh;left:50%;transform:translateX(-50%);display:flex;gap:clamp(16px,2.5vw,30px);opacity:0}
+.eye-glow{width:8px;height:8px;border-radius:50%;background:#fff;animation:eye-pulse 2.2s ease-in-out infinite;box-shadow:0 0 6px 3px rgba(255,255,255,.9),0 0 18px 8px rgba(210,210,255,.7),0 0 36px 16px rgba(180,160,255,.4)}
+@keyframes eye-pulse{0%,100%{transform:scale(1);box-shadow:0 0 6px 3px rgba(255,255,255,.9),0 0 18px 8px rgba(210,210,255,.7),0 0 36px 16px rgba(180,160,255,.4)}50%{transform:scale(1.55);box-shadow:0 0 10px 5px rgba(255,255,255,1),0 0 28px 14px rgba(220,210,255,.9),0 0 56px 24px rgba(180,160,255,.6)}}
+
+/* Lamp summoning glow burst */
+#lamp-burst{position:absolute;z-index:3;bottom:3vh;left:50%;transform:translateX(-50%);width:600px;height:300px;border-radius:50%;background:radial-gradient(ellipse,rgba(244,168,37,.4) 0%,rgba(91,33,182,.3) 40%,transparent 70%);pointer-events:none;opacity:0;filter:blur(30px)}
+
+/* Purple smoke streams */
+#smoke-layer{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden;opacity:0}
+.smoke-stream{position:absolute;bottom:20%;left:50%;transform:translateX(-50%);width:4px;border-radius:50px;background:linear-gradient(to top,rgba(124,58,237,.6),rgba(91,33,182,.3),transparent);animation:smoke-rise 3s ease-in-out infinite;opacity:0}
+@keyframes smoke-rise{0%{height:0;opacity:0;transform:translateX(-50%) scaleX(1)}40%{opacity:.8}100%{height:45vh;opacity:0;transform:translateX(calc(-50% + var(--dx,0px))) scaleX(1.5)}}
+
+/* Hero title — z10 */
+.hero-title{position:absolute;bottom:4vh;left:50%;transform:translateX(-50%);text-align:center;z-index:10;pointer-events:none;white-space:nowrap}
+.hero-title h1{font-family:var(--fd);font-size:clamp(3rem,9vw,7rem);font-weight:900;letter-spacing:.12em;background:linear-gradient(160deg,#ffe29f 0%,#f4a825 20%,#e879f9 55%,#7c3aed 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 40px rgba(124,58,237,.5));overflow:hidden}
+
+/* Each letter wraps for individual animation */
+.letter{display:inline-block;opacity:0;transform:translateY(40px) rotateX(60deg);transform-origin:bottom center;will-change:transform,opacity}
+
+.hero-tagline{display:block;font-size:clamp(.55rem,1.3vw,.8rem);color:rgba(196,181,253,.7);letter-spacing:.35em;text-transform:uppercase;margin-top:.8rem;opacity:0}
+.scroll-cue{margin-top:2rem;display:flex;flex-direction:column;align-items:center;animation:cue-bounce 2.5s ease-in-out infinite;opacity:0.8}
+.scroll-cue span{font-size:9px;letter-spacing:3px;color:rgba(124,58,237,.8)}
+.scroll-cue::after{content:'';display:block;width:1px;height:40px;background:linear-gradient(to bottom,rgba(124,58,237,.8),transparent);margin-top:6px}
+@keyframes cue-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GLOBAL SECTION STYLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+section{position:relative;z-index:1}
+.inner{max-width:1100px;margin:0 auto;padding:0 2rem}
+.s-label{font-size:9px;letter-spacing:4px;color:var(--purple-l);text-transform:uppercase;text-align:center;margin-bottom:1rem;opacity:.8}
+.s-title{font-family:var(--fd);font-size:clamp(1.7rem,4vw,2.8rem);font-weight:700;text-align:center;background:linear-gradient(135deg,var(--gold-l),var(--purple-d));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:3rem;line-height:1.2}
+.glass{background:rgba(8,1,20,.78);backdrop-filter:blur(22px);border:1px solid rgba(124,58,237,.28);border-radius:18px;box-shadow:0 4px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04)}
+.reveal{opacity:0;transform:translateY(28px)}
+.divider{width:100%;max-width:500px;margin:0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(124,58,237,.3),transparent)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MANIFESTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#manifesto{padding:7rem 2rem;display:flex;justify-content:center;align-items:center;overflow:hidden}
+.manifesto-box{max-width:760px;width:100%;padding:3rem 3.5rem;position:relative;z-index:1}
+.manifesto-box::before{content:'';position:absolute;top:-1px;left:-1px;width:60px;height:60px;border-top:2px solid var(--gold);border-left:2px solid var(--gold);border-radius:17px 0 0 0;opacity:.6}
+.manifesto-box::after{content:'';position:absolute;bottom:-1px;right:-1px;width:60px;height:60px;border-bottom:2px solid var(--purple);border-right:2px solid var(--purple);border-radius:0 0 17px 0;opacity:.6}
+.m-badge{display:inline-block;font-size:9px;letter-spacing:3px;color:var(--purple-l);border:1px solid rgba(124,58,237,.3);border-radius:100px;padding:4px 14px;margin-bottom:1.8rem;text-transform:uppercase;background:rgba(124,58,237,.06)}
+.m-quote{font-family:var(--fi);font-style:italic;font-size:clamp(1rem,2.4vw,1.35rem);line-height:1.7;margin-bottom:2rem;background:linear-gradient(90deg,#c084fc,#a78bfa,#c084fc);background-size:300% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite}
+@keyframes shimmer{to{background-position:300% center}}
+.m-headline{font-family:var(--fd);font-size:clamp(1.4rem,3vw,2rem);font-weight:700;color:var(--gold-l);line-height:1.25;margin-bottom:1.8rem}
+.m-body{font-size:clamp(.78rem,1.2vw,.88rem);color:var(--muted);line-height:2}
+.m-body strong{color:var(--purple-d)}.m-body em{color:var(--gold-l);font-style:normal}
+.m-bg-pulse{position:absolute;inset:20px;border-radius:14px;background:radial-gradient(ellipse 80% 60% at 50% 60%,rgba(91,33,182,.08) 0%,transparent 70%);animation:m-glow 4s ease-in-out infinite;pointer-events:none;z-index:0}
+@keyframes m-glow{0%,100%{opacity:.7}50%{opacity:1}}
+.manifesto-box>*{position:relative;z-index:1}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   WISHES / FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#wishes{padding:5rem 2rem 7rem}
+.wishes-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.8rem}
+@media(max-width:720px){.wishes-grid{grid-template-columns:1fr}}
+.wish-card{padding:2.5rem 2rem;border-radius:16px;background:rgba(8,1,20,.65);border:1px solid rgba(124,58,237,.18);position:relative;overflow:hidden;transition:all .35s cubic-bezier(.23,1,.32,1)}
+.wish-card:hover{border-color:rgba(124,58,237,.45);box-shadow:0 0 50px rgba(91,33,182,.15);transform:translateY(-6px)}
+.wish-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(124,58,237,.5),transparent)}
+.w-icon{font-size:2rem;margin-bottom:1rem;display:block}
+.w-title{font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--gold-l);margin-bottom:1rem}
+.w-desc{font-size:.8rem;color:var(--muted);line-height:1.9}
+.w-desc code{background:rgba(124,58,237,.15);color:var(--purple-d);padding:1px 5px;border-radius:3px;font-size:.75rem}
+.w-tag{display:inline-block;margin-top:1.4rem;padding:4px 12px;border-radius:100px;font-size:9px;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(124,58,237,.25);color:var(--purple-l)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SPELLBOOK — Tap to Unlock
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#spellbook{padding:6rem 2rem 8rem;overflow:hidden}
+.book-section{max-width:700px;margin:0 auto;text-align:center}
+.closed-book-wrap{cursor:pointer;position:relative;display:inline-block;transition:transform .3s}
+.closed-book-wrap:hover{transform:scale(1.04)}
+.closed-book-wrap img{max-width:320px;filter:drop-shadow(0 20px 60px rgba(91,33,182,.5));animation:book-hover 3.5s ease-in-out infinite}
+@keyframes book-hover{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-12px) rotate(.5deg)}}
+.tap-hint{font-size:.7rem;color:var(--purple-l);margin-top:1.5rem;letter-spacing:2px;animation:pulse-hint 2s ease-in-out infinite}
+@keyframes pulse-hint{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* Book overlay */
+.book-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(4,1,13,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column}
+.book-overlay.open{display:flex}
+.flipbook{position:relative;width:min(90vw,500px);height:min(75vh,650px);perspective:1500px}
+.book-page{position:absolute;inset:0;backface-visibility:hidden;transition:transform .85s cubic-bezier(.4,.2,.2,1);transform-origin:left center;border-radius:8px;overflow:hidden;background-size:cover;background-position:center}
+.book-page .page-content{position:absolute;inset:0;padding:2.5rem 2rem;display:flex;flex-direction:column;justify-content:center;color:#3a2a1a;font-size:.82rem;line-height:1.8}
+.book-page .page-content h3{font-family:var(--fd);font-size:1.1rem;color:#4a2a8a;margin-bottom:1rem;text-align:center}
+.book-page .page-content code{background:rgba(124,58,237,.1);padding:2px 6px;border-radius:3px;font-size:.75rem;color:#5b21b6}
+.book-page .page-content ol{padding-left:1.2rem}
+.book-page .page-content li{margin-bottom:.5rem}
+.book-page .page-num{position:absolute;bottom:1rem;right:1.5rem;font-size:.65rem;color:#8a7a6a;font-family:var(--fi)}
+.page-flipped{transform:rotateY(-180deg)}
+.book-nav{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem}
+.book-nav button{padding:8px 24px;border-radius:8px;border:1px solid rgba(124,58,237,.4);background:rgba(124,58,237,.15);color:var(--purple-d);font-family:var(--fn);font-size:.7rem;cursor:pointer;transition:all .2s}
+.book-nav button:hover{background:rgba(124,58,237,.3)}
+.close-book{position:absolute;top:1.5rem;right:2rem;font-size:1.5rem;color:var(--purple-l);cursor:pointer;z-index:210;opacity:.7;transition:opacity .2s}
+.close-book:hover{opacity:1}
+.team-member{display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem}
+.team-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,rgba(91,33,182,.4),rgba(244,168,37,.3));display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   INSTALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#install{padding:6rem 2rem}
+.install-inner{max-width:700px;margin:0 auto}
+.install-bar{display:flex;align-items:center;gap:1rem;padding:1.2rem 1.6rem;border-radius:12px;background:rgba(3,1,10,.97);border:1px solid rgba(124,58,237,.3);margin-bottom:1.8rem}
+.ib-cmd{flex:1;font-size:.75rem;color:var(--gold-l);word-break:break-all}
+.copy-btn{padding:5px 14px;border-radius:6px;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);color:var(--purple-d);font-family:var(--fn);font-size:11px;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:rgba(124,58,237,.3)}
+.copy-btn.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:#22c55e}
+.terminal{background:rgba(3,1,10,.97);border:1px solid rgba(124,58,237,.3);border-radius:12px;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5);margin-bottom:1.8rem}
+.t-header{display:flex;align-items:center;gap:6px;padding:11px 16px;background:rgba(124,58,237,.07);border-bottom:1px solid rgba(124,58,237,.12)}
+.dot{width:9px;height:9px;border-radius:50%}.d-r{background:#ef4444}.d-y{background:#f59e0b}.d-g{background:#22c55e}
+.t-body{padding:1.4rem 1.6rem}
+.t-row{display:flex;gap:10px;align-items:baseline;margin-bottom:.7rem}
+.t-ps{color:var(--purple-l);font-size:12px}.t-cmd{color:var(--gold-l);font-size:12px}.t-cmt{color:rgba(148,163,184,.38);font-size:10px}
+.install-note{text-align:center;font-size:10px;color:#475569;line-height:2}
+.install-note code{color:var(--purple-l);background:rgba(124,58,237,.1);padding:1px 6px;border-radius:3px}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RITUAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#ritual{padding:6rem 2rem 7rem;max-width:820px;margin:0 auto}
+.steps{display:flex;flex-direction:column;gap:1.2rem;margin-top:3rem}
+.step{display:flex;gap:1.5rem;padding:1.4rem 1.6rem;border-radius:12px;background:rgba(8,1,20,.6);border:1px solid rgba(124,58,237,.14);transition:all .3s;align-items:flex-start}
+.step:hover{border-color:rgba(124,58,237,.35);transform:translateX(8px)}
+.step-n{font-family:var(--fd);font-size:1.8rem;font-weight:900;color:rgba(124,58,237,.22);min-width:2.2rem}
+.step-cmd{display:inline-block;font-size:.85rem;color:var(--gold-l);background:rgba(244,168,37,.07);border:1px solid rgba(244,168,37,.15);padding:3px 10px;border-radius:5px;margin-bottom:.5rem}
+.step-desc{font-size:.78rem;color:var(--muted);line-height:1.85}
+.step-desc code{color:var(--purple-d);background:rgba(124,58,237,.1);padding:1px 5px;border-radius:3px;font-size:.72rem}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TEAM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#team{padding:7rem 2rem 5rem}
+.team-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:3rem}
+@media(max-width:900px){.team-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.team-grid{grid-template-columns:repeat(2,1fr)}}
+.team-card{padding:1.6rem 1rem;border-radius:14px;background:rgba(8,1,20,.7);border:1px solid rgba(124,58,237,.14);text-align:center;transition:all .35s cubic-bezier(.23,1,.32,1)}
+.team-card:hover{border-color:rgba(124,58,237,.4);transform:translateY(-6px) scale(1.02);box-shadow:0 16px 40px rgba(91,33,182,.15)}
+.tc-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,rgba(91,33,182,.4),rgba(244,168,37,.2));border:1px solid rgba(124,58,237,.25);margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.tc-name{font-family:var(--fd);font-size:.6rem;letter-spacing:1.2px;color:var(--purple-d);text-transform:uppercase;line-height:1.4}
+.tech-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:3rem}
+.t-badge{padding:5px 14px;border-radius:100px;border:1px solid rgba(124,58,237,.22);color:rgba(167,139,250,.65);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;background:rgba(124,58,237,.05);transition:all .2s}
+.t-badge:hover{border-color:rgba(124,58,237,.5);color:var(--purple-l)}
+.bkit-box{text-align:center;padding:1.5rem;border-top:1px solid rgba(124,58,237,.1)}
+.bkit-box p{font-size:10px;color:rgba(148,163,184,.4);line-height:2}
+.bkit-box span{color:var(--purple-l)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOOTER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+footer{padding:3rem 2rem;text-align:center;border-top:1px solid rgba(124,58,237,.1)}
+.ft-logo{font-family:var(--fd);font-size:1.6rem;font-weight:900;letter-spacing:.1em;background:linear-gradient(135deg,var(--gold-l),var(--purple-d));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+.ft-tag{font-size:9px;color:rgba(148,163,184,.3);letter-spacing:3px;text-transform:uppercase}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MOBILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .wishes-grid{grid-template-columns:1fr}
+  .manifesto-box{padding:2rem 1.5rem}
+  .step{flex-direction:column;gap:.8rem}
+  #layer-hands img{width:98%}
+  #layer-genie img{height:50vh}
+  #layer-lamp img{height:22vh}
+}
+@media(max-width:480px){.hero-title h1{font-size:2.5rem}.eye-wrap{display:none}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <span class="nav-logo">GENIE</span>
+  <div class="nav-links">
+    <a href="#manifesto">About</a>
+    <a href="#spellbook">Spellbook</a>
+    <a href="#install">Install</a>
+    <a href="#team">Team</a>
+  </div>
+</nav>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     HERO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section id="hero">
+  <canvas id="stars-canvas"></canvas>
+
+  <!-- Background nebula -->
+  <img class="hero-bg" id="hero-bg" src="images/bg.png" alt=""/>
+
+  <!-- Atmospheric fog -->
+  <div id="fog"></div>
+
+  <!-- Floating code symbols -->
+  <div class="holo-layer" id="holo-layer"></div>
+
+  <!-- Lamp summoning burst -->
+  <div id="lamp-burst"></div>
+
+  <!-- Smoke streams from lamp -->
+  <div id="smoke-layer">
+    <div class="smoke-stream" style="--dx:-30px;animation-delay:0s;opacity:.8"></div>
+    <div class="smoke-stream" style="--dx:0px;animation-delay:.4s;opacity:1"></div>
+    <div class="smoke-stream" style="--dx:30px;animation-delay:.8s;opacity:.7"></div>
+  </div>
+
+  <!-- LAMP (appears THIRD) -->
+  <div class="hero-layer" id="layer-lamp">
+    <img id="img-lamp" src="images/lamp.png" alt="Magic Lamp"/>
+  </div>
+
+  <!-- GENIE (appears SECOND) -->
+  <div class="hero-layer" id="layer-genie">
+    <img id="img-genie" src="images/genie.png" alt="Genie"/>
+  </div>
+
+  <!-- PUPPET HANDS (appears FIRST) -->
+  <div class="hero-layer" id="layer-hands">
+    <img id="img-hands" src="images/hands.png" alt="Puppet Master Hands"/>
+  </div>
+
+  <!-- SVG Glowing Strings -->
+  <svg id="strings-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="sg" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Glow backing (fat strokes) -->
+    <path class="str-glow" id="sg1"/><path class="str-glow" id="sg2"/>
+    <path class="str-glow" id="sg3"/><path class="str-glow" id="sg4"/>
+    <path class="str-glow" id="sg5"/><path class="str-glow" id="sg6"/>
+    <!-- Fine visible strands -->
+    <path class="str" id="s1"/><path class="str" id="s2"/>
+    <path class="str" id="s3"/><path class="str" id="s4"/>
+    <path class="str" id="s5"/><path class="str" id="s6"/>
+  </svg>
+
+
+
+  <!-- Hero title -->
+  <div class="hero-title" id="hero-title">
+    <h1 id="hero-h1">
+      <span class="letter">G</span><span class="letter">E</span><span class="letter">N</span><span class="letter">I</span><span class="letter">E</span>
+    </h1>
+    <span class="hero-tagline" id="hero-tagline">Software is a Wish — GENIE is the Command</span>
+    <div class="scroll-cue" id="scroll-cue"><span>SCROLL</span></div>
+  </div>
+</section>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     MANIFESTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section id="manifesto">
+  <div class="manifesto-box glass reveal">
+    <div class="m-bg-pulse"></div>
+    <span class="m-badge">◈ The Manifesto</span>
+    <p class="m-quote">"Every line of code is a spell. Every system, a living enchantment. But spells decay — entropy is inevitable."</p>
+    <h2 class="m-headline">AI-Powered Code Maintainability &amp; Repair Engine</h2>
+    <p class="m-body"><strong>GENIE</strong> scans your entire codebase using deep AST analysis, identifies <em>code entropy</em> — dead functions, duplicated logic, broken patterns — then autonomously repairs and documents everything.<br><br>Think of it as a <strong>puppet master for your code</strong>: pulling strings, fixing tangles, and keeping the performance alive.</p>
+  </div>
+</section>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     FEATURES / WISHES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section id="wishes">
+  <div class="inner">
+    <p class="s-label reveal">◈ The Four Wishes</p>
+    <h2 class="s-title reveal">What GENIE Grants</h2>
+    <div class="wishes-grid">
+      <div class="wish-card reveal"><span class="w-icon">🔮</span><h3 class="w-title">Deep Code Analysis</h3><p class="w-desc">Full AST parsing with <code>genie scan</code>. Identifies dead code, circular dependencies, and entropy scores across your entire repository.</p><span class="w-tag">Analysis</span></div>
+      <div class="wish-card reveal"><span class="w-icon">⚡</span><h3 class="w-title">Autonomous Repair</h3><p class="w-desc">AI agents generate surgical patches via <code>genie repair</code>. Zero manual refactoring — just approve the patches you want applied.</p><span class="w-tag">AI Repair</span></div>
+      <div class="wish-card reveal"><span class="w-icon">📜</span><h3 class="w-title">Living Documentation</h3><p class="w-desc">Auto-generated docs that stay in sync. Produces <code>markdown</code>, <code>JSDoc</code>, and diagrams from source — regenerated on every commit.</p><span class="w-tag">DocGen</span></div>
+      <div class="wish-card reveal"><span class="w-icon">🌀</span><h3 class="w-title">Entropy Score</h3><p class="w-desc">A single number quantifying codebase health. Track it over time, set thresholds, and receive alerts when entropy rises above safe limits.</p><span class="w-tag">Health</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     SPELLBOOK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section id="spellbook">
+  <div class="inner">
+    <p class="s-label reveal">◈ The Spellbook</p>
+    <h2 class="s-title reveal">Installation Grimoire</h2>
+    <div class="book-section reveal">
+      <div class="closed-book-wrap" id="closed-book" onclick="openBook()">
+        <img src="images/book-closed.png" alt="Tap to Open Spellbook"/>
+      </div>
+      <p class="tap-hint">✦ TAP TO UNLOCK THE SPELLBOOK ✦</p>
+    </div>
+  </div>
+</section>
+
+<!-- Book Overlay -->
+<div class="book-overlay" id="book-overlay">
+  <span class="close-book" onclick="closeBook()">✕</span>
+  <div>
+    <div class="flipbook" id="flipbook"></div>
+    <div class="book-nav">
+      <button onclick="prevPage()">◂ Prev</button>
+      <button onclick="nextPage()">Next ▸</button>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     INSTALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section id="install">
+  <div class="install-inner">
+    <p class="s-label reveal">◈ Summon the GENIE</p>
+    <h2 class="s-title reveal">Quick Install</h2>
+    <div class="install-bar reveal">
+      <code class="ib-cmd" id="install-cmd">npx genie-setup init</code>
+      <button class="copy-btn" id="copy-btn" onclick="copyInstall()">Copy</button>
+    </div>
+    <div class="terminal reveal">
+      <div class="t-header"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span></div>
+      <div class="t-body">
+        <div class="t-row"><span class="t-ps">$</span><span class="t-cmd">genie scan ./src</span><span class="t-cmt"># deep AST analysis</span></div>
+        <div class="t-row"><span class="t-ps">$</span><span class="t-cmd">genie repair --plan</span><span class="t-cmt"># generate fix plan</span></div>
+        <div class="t-row"><span class="t-ps">$</span><span class="t-cmd">genie apply --approve</span><span class="t-cmt"># apply patches</span></div>
+        <div class="t-row"><span class="t-ps">$</span><span class="t-cmd">genie test</span><span class="t-cmt"># validate fixes</span></div>
+        <div class="t-row"><span class="t-ps">$</span><span class="t-cmd">genie docs --format md</span><span class="t-cmt"># generate docs</span></div>
+      </div>
+    </div>
+    <p class="install-note reveal">Requires <code>Node 18+</code> · Works on <code>Windows</code> · <code>macOS</code> · <code>Linux</code></p>
+  </div>
+</section>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     RITUAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section id="ritual">
+  <p class="s-label reveal" style="text-align:center">◈ The Ritual</p>
+  <h2 class="s-title reveal">How It Works</h2>
+  <div class="steps">
+    <div class="step reveal"><div class="step-n">01</div><div><div class="step-cmd">genie scan</div><p class="step-desc">Full AST traversal. Identifies dead functions, circular deps, and calculates entropy scores across every file.</p></div></div>
+    <div class="step reveal"><div class="step-n">02</div><div><div class="step-cmd">genie repair --plan</div><p class="step-desc">AI agents orchestrate targeted repair strategies. Multiple models propose solutions, GENIE picks the best.</p></div></div>
+    <div class="step reveal"><div class="step-n">03</div><div><div class="step-cmd">genie apply --approve</div><p class="step-desc">Review diffs, approve changes individually or in batch. Full git integration — never committed blindly.</p></div></div>
+    <div class="step reveal"><div class="step-n">04</div><div><div class="step-cmd">genie test &amp;&amp; genie docs</div><p class="step-desc">Validate patches with automated testing, then regenerate living documentation. Entropy score recalculated.</p></div></div>
+  </div>
+</section>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     TEAM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section id="team">
+  <div class="inner">
+    <p class="s-label reveal">◈ The Architects</p>
+    <h2 class="s-title reveal">Team Void Architects</h2>
+    <div class="team-grid">
+      <div class="team-card reveal"><div class="tc-avatar">🧙</div><p class="tc-name">Avish<br/>Uparikar</p></div>
+      <div class="team-card reveal"><div class="tc-avatar">⚗️</div><p class="tc-name">Dipak<br/>Dhurve</p></div>
+      <div class="team-card reveal"><div class="tc-avatar">🔮</div><p class="tc-name">Sagar<br/>Mankar</p></div>
+      <div class="team-card reveal"><div class="tc-avatar">⚡</div><p class="tc-name">Saurabh<br/>Meshram</p></div>
+      <div class="team-card reveal"><div class="tc-avatar">🌀</div><p class="tc-name">Sanket<br/>Borkar</p></div>
+    </div>
+    <div class="tech-strip reveal">
+      <span class="t-badge">Node.js</span><span class="t-badge">Python</span><span class="t-badge">OpenAI</span>
+      <span class="t-badge">Anthropic</span><span class="t-badge">Gemini</span><span class="t-badge">AST</span>
+      <span class="t-badge">GSAP</span><span class="t-badge">Git</span>
+    </div>
+    <div class="bkit-box reveal"><p>Built at <span>Breakout Kit Hackathon</span> · Team <span>Void Architects</span> · 2025</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-logo">GENIE</div>
+  <p class="ft-tag">Software is a Wish — GENIE is the Command</p>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   GENIE — CINEMATIC HERO ENTRANCE + FULL PARALLAX ENGINE
+   Sequence: HANDS → GENIE → LAMP → STRINGS → TITLE
+══════════════════════════════════════════════════════════════ */
+
+/* ── Stars Canvas ──────────────────────────────────────────── */
+(function(){
+  var c=document.getElementById('stars-canvas'),x=c.getContext('2d');
+  function rs(){c.width=innerWidth;c.height=innerHeight}
+  rs();window.addEventListener('resize',rs);
+  var stars=[];
+  for(var i=0;i<220;i++){
+    stars.push({
+      x:Math.random()*3000, y:Math.random()*3000,
+      r:Math.random()*1.6+.2,
+      o:Math.random(),
+      d:Math.random()*.018-.009,
+      twinkle:Math.random()*.03+.005
+    });
+  }
+  function draw(){
+    x.clearRect(0,0,c.width,c.height);
+    for(var i=0;i<stars.length;i++){
+      var s=stars[i];
+      s.o+=s.twinkle;
+      if(s.o>1||s.o<0)s.twinkle*=-1;
+      var alpha=Math.max(0,Math.min(1,s.o));
+      x.beginPath();
+      x.arc(s.x%c.width,s.y%c.height,s.r,0,Math.PI*2);
+      x.fillStyle='rgba(255,255,255,'+alpha+')';
+      x.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── Holo floating symbols ─────────────────────────────────── */
+(function(){
+  var syms=['</>','{}','/>','AST','∞','◈','⬡','λ','⌘','=>','✦','genie'];
+  var layer=document.getElementById('holo-layer');
+  function spawn(){
+    var el=document.createElement('span');
+    el.className='h-sym';
+    el.textContent=syms[Math.floor(Math.random()*syms.length)];
+    el.style.left=(Math.random()*95)+'%';
+    el.style.bottom='0';
+    el.style.animationDuration=(5+Math.random()*7)+'s';
+    el.style.animationDelay='0s';
+    layer.appendChild(el);
+    setTimeout(function(){el.remove()},12000);
+  }
+  // Start spawning after intro
+  setTimeout(function(){
+    spawn();
+    setInterval(spawn,900);
+  },3000);
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   CINEMATIC ENTRANCE SEQUENCE (GSAP Timeline)
+   Stage 1: BG + Stars fade in
+   Stage 2: HANDS drop from top (t=0.3)
+   Stage 3: GENIE rises from smoke (t=1.8)
+   Stage 4: LAMP bursts from bottom (t=3.0)
+   Stage 5: Strings draw themselves (t=3.3)
+   Stage 6: Eyes ignite (t=3.6)
+   Stage 7: GENIE letters drop (t=3.8)
+   Stage 8: Tagline + scroll cue (t=4.6)
+══════════════════════════════════════════════════════════════ */
+gsap.registerPlugin(ScrollTrigger);
+
+var tl = gsap.timeline({ 
+  defaults: { ease: 'power3.out' },
+  scrollTrigger: {
+    trigger: '#hero',
+    start: 'top top',
+    end: '+=250%', // Pin for 2.5x viewport height to give plenty of scrolling space for the animation
+    pin: true,
+    scrub: 1
+  }
+});
+
+// Immediate: bg fades in
+tl.to('.hero-bg', { opacity:0.72, duration:1.2, ease:'power2.out' }, 0);
+tl.to('#stars-canvas', { opacity:0.7, duration:1.5 }, 0);
+
+// ── STAGE 1: HANDS drop from above ──────────────────────────
+// They start off-screen top, slide down dramatically
+tl.to('#layer-hands', {
+  opacity:1,
+  y:0,
+  duration:1.4,
+  ease:'power4.out'
+}, 0.3);
+// Glow builds as hands settle
+tl.to('#img-hands', {
+  filter:'drop-shadow(0 0 45px rgba(91,33,182,.55)) drop-shadow(0 0 20px rgba(196,168,255,.25))',
+  duration:1.2
+}, 0.9);
+
+// ── STAGE 2: GENIE rises from smoke ─────────────────────────
+// Purple smoke streams appear first
+tl.to('#smoke-layer', { opacity:1, duration:0.6 }, 1.6);
+
+// Genie rises up from lamp position, scaling from small
+tl.to('#layer-genie', {
+  opacity:1,
+  y:0,
+  scale:1,
+  duration:1.7,
+  ease:'power2.out'
+}, 1.8);
+// Genie glow
+tl.to('#img-genie', {
+  filter:'drop-shadow(0 0 55px rgba(91,33,182,.65)) drop-shadow(0 0 25px rgba(167,51,200,.3))',
+  duration:1.2
+}, 2.4);
+
+// ── STAGE 3: LAMP bursts from bottom ────────────────────────
+// Lamp burst glow first
+tl.to('#lamp-burst', {
+  opacity:1,
+  scale:1.4,
+  duration:0.8,
+  ease:'power2.out'
+}, 2.8);
+// Lamp appears
+tl.to('#layer-lamp', {
+  opacity:1,
+  y:0,
+  duration:1.0,
+  ease:'back.out(1.6)'
+}, 3.0);
+// Lamp image glow
+tl.to('#img-lamp', {
+  filter:'drop-shadow(0 0 60px rgba(244,168,37,.6)) drop-shadow(0 0 30px rgba(91,33,182,.4))',
+  duration:0.9
+}, 3.2);
+// Burst fades
+tl.to('#lamp-burst', { opacity:0, duration:1.2 }, 3.5);
+
+// ── STAGE 4: Strings reveal ──────────────────────────────────
+tl.to('#strings-svg', { opacity:1, duration:0.8, ease:'power2.inOut' }, 3.3);
+
+// ── STAGE 5: Eyes ignite ────────────────────────────────────
+tl.to('.eye-wrap', { opacity:1, duration:0.6, ease:'power2.out' }, 3.6);
+
+// ── STAGE 6: GENIE title letters drop ───────────────────────
+tl.to('.letter', {
+  opacity:1,
+  y:0,
+  rotateX:0,
+  duration:0.7,
+  stagger:0.1,
+  ease:'back.out(2)'
+}, 3.8);
+
+// ── STAGE 7: Tagline + scroll cue ───────────────────────────
+tl.to('#hero-tagline', { opacity:1, duration:0.8 }, 4.6);
+tl.to('#scroll-cue',   { opacity:0, duration:0.6 }, 0.2);
+
+/* ══════════════════════════════════════════════════════════════
+   MOUSE PARALLAX — 3 layer depth tracking
+══════════════════════════════════════════════════════════════ */
+(function(){
+  var hands=document.getElementById('layer-hands');
+  var genie=document.getElementById('layer-genie');
+  var lamp =document.getElementById('layer-lamp');
+  var bg   =document.getElementById('hero-bg');
+  var eyes =document.getElementById('eye-wrap');
+  var cx=0,cy=0,tx=0,ty=0;
+
+  document.addEventListener('mousemove',function(e){
+    tx=(e.clientX/innerWidth-.5)*2;
+    ty=(e.clientY/innerHeight-.5)*2;
+  });
+
+  function tick(){
+    cx+=(tx-cx)*.05;
+    cy+=(ty-cy)*.05;
+    // Note: we ADD to existing GSAP transforms via CSS transform directly only AFTER intro
+    // GSAP controls y on the layers, so we use the img elements for mouse parallax
+    var hi=document.getElementById('img-hands');
+    var gi=document.getElementById('img-genie');
+    var li=document.getElementById('img-lamp');
+    if(hi)hi.style.transform='translate('+(-cx*28)+'px,'+(-cy*18)+'px)';
+    if(gi)gi.style.transform='translate('+(-cx*16)+'px,'+(-cy*10)+'px)';
+    if(li)li.style.transform='translate('+(-cx*8)+'px,'+(-cy*5)+'px)';
+    if(bg)bg.style.transform='translate('+(-cx*5)+'px,'+(-cy*3)+'px) scale(1.12)';
+    if(eyes)eyes.style.transform='translateX(-50%) translate('+(-cx*12)+'px,'+(-cy*8)+'px)';
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLL PARALLAX (GSAP ScrollTrigger scrub)
+   Layers separate as user scrolls — hands go fastest
+══════════════════════════════════════════════════════════════ */
+gsap.to('#layer-hands',{yPercent:-35,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:1.2}});
+gsap.to('#layer-genie',{yPercent:-18,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:1.2}});
+gsap.to('#layer-lamp', {yPercent:-8, ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:1.2}});
+gsap.to('#hero-bg',    {yPercent:-6, ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:1.2}});
+gsap.to('#fog',        {yPercent:10, ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:1.2}});
+
+/* ══════════════════════════════════════════════════════════════
+   SVG GLOWING STRINGS — React to mouse
+══════════════════════════════════════════════════════════════ */
+(function(){
+  // Hand anchors (as fraction of viewport) → genie body anchors
+  var anchors=[
+    [.35,.09],[.40,.06],[.46,.05],
+    [.54,.05],[.60,.06],[.65,.09]
+  ];
+  var targets=[
+    [.44,.40],[.46,.36],[.48,.44],
+    [.52,.44],[.54,.36],[.56,.40]
+  ];
+  var mx=0.5;
+  document.addEventListener('mousemove',function(e){ mx=e.clientX/innerWidth; });
+
+  function update(){
+    var w=innerWidth,h=innerHeight;
+    var offset=(mx-.5)*50; // string tension pull
+
+    for(var i=0;i<6;i++){
+      var fine=document.getElementById('s'+(i+1));
+      var glow=document.getElementById('sg'+(i+1));
+      if(!fine)continue;
+
+      var sx=anchors[i][0]*w, sy=anchors[i][1]*h;
+      var ex=targets[i][0]*w, ey=targets[i][1]*h;
+
+      // Control point shifts with mouse for tension effect
+      var side = i<3 ? -1 : 1;
+      var cpx  = (sx+ex)/2 + offset*side*0.35;
+      var cpy  = (sy+ey)/2 - 15;
+
+      var d='M'+sx+','+sy+' Q'+cpx+','+cpy+' '+ex+','+ey;
+      fine.setAttribute('d',d);
+      if(glow)glow.setAttribute('d',d);
+    }
+    requestAnimationFrame(update);
+  }
+  update();
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   LAMP FLICKER — random brightness + glow cycle
+══════════════════════════════════════════════════════════════ */
+(function(){
+  var img=document.getElementById('img-lamp');
+  if(!img)return;
+  function flicker(){
+    var b=.9+Math.random()*.14;
+    var gs=28+Math.random()*36;
+    var ga=.35+Math.random()*.3;
+    var gs2=12+Math.random()*16;
+    var ga2=.2+Math.random()*.2;
+    img.style.filter=[
+      'drop-shadow(0 0 '+gs+'px rgba(244,168,37,'+ga+'))',
+      'drop-shadow(0 0 '+gs2+'px rgba(91,33,182,'+ga2+'))',
+      'brightness('+b+')'
+    ].join(' ');
+    setTimeout(flicker,55+Math.random()*260);
+  }
+  flicker();
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   EYE GLOW — scale with mouse proximity
+══════════════════════════════════════════════════════════════ */
+(function(){
+  var eyes=document.querySelectorAll('.eye-glow');
+  document.addEventListener('mousemove',function(e){
+    var cx=innerWidth/2;
+    var dist=1-Math.min(Math.abs(e.clientX-cx)/(innerWidth*.5),1);
+    var scale=1+dist*.65;
+    eyes.forEach(function(eye){eye.style.transform='scale('+scale+')'});
+  });
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLL REVEAL — all .reveal elements
+══════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.reveal').forEach(function(el){
+  gsap.fromTo(el,{opacity:0,y:32},{
+    scrollTrigger:{trigger:el,start:'top 88%',toggleActions:'play none none reverse'},
+    opacity:1,y:0,duration:1,ease:'power3.out'
+  });
+});
+
+/* ── Nav scroll state ────────────────────────────────────────── */
+window.addEventListener('scroll',function(){
+  document.getElementById('nav').classList.toggle('scrolled',scrollY>60);
+});
+
+/* ══════════════════════════════════════════════════════════════
+   SPELLBOOK — Tap to open, page flip animation
+══════════════════════════════════════════════════════════════ */
+var PAGE_IMG = 'images/page.jpg';
+
+var bookPages=[
+  {title:'Welcome to GENIE',content:'<p style="text-align:center;font-family:var(--fi);font-size:1rem;color:#5b21b6;margin-bottom:1.5rem"><em>"The ancient grimoire of code mastery"</em></p><p>This spellbook contains the sacred rituals to summon and command GENIE — the AI-Powered Code Maintainability Engine.</p><p style="margin-top:1rem">Turn the pages to learn the installation rites and incantations.</p>'},
+  {title:'⚡ Prerequisites',content:'<ol><li>Install <code>Node.js 18+</code></li><li>Install <code>Git</code></li><li>Have a terminal ready</li><li>Get an API key from OpenAI, Anthropic, or Gemini</li></ol><p style="margin-top:1rem;font-size:.75rem;color:#8a7a6a">Works on Windows, macOS, and Linux</p>'},
+  {title:'📦 Installation',content:'<ol><li>Open your terminal</li><li>Run: <code>npx genie-setup init</code></li><li>Follow the setup wizard</li><li>Choose your AI provider</li><li>Configure <code>.genie.config.json</code></li></ol>'},
+  {title:'🔮 Scanning Your Code',content:'<ol><li>Navigate to your project root</li><li>Run: <code>genie scan ./src</code></li><li>Wait for AST analysis</li><li>Review the entropy report</li><li>Check: <code>genie dashboard</code></li></ol>'},
+  {title:'⚡ Repairing Code',content:'<ol><li>Plan: <code>genie repair --plan</code></li><li>Review proposed patches</li><li>Apply: <code>genie apply --approve</code></li><li>Test: <code>genie test</code></li></ol>'},
+  {title:'📜 Documentation',content:'<ol><li>Generate: <code>genie docs --format md</code></li><li>Output → <code>./docs</code> folder</li><li>Includes JSDoc &amp; diagrams</li><li>Auto-regenerates on commit</li></ol>'},
+  {title:'🌀 Entropy Monitoring',content:'<ol><li>Check: <code>genie entropy</code></li><li>Set thresholds in config</li><li>Get alerts when entropy rises</li><li>Track trends over time</li></ol>'},
+  {title:'🧙 Team Void Architects',content:'<div class="team-member"><div class="team-avatar">🧙</div><span><strong>Avish Uparikar</strong> — Lead</span></div><div class="team-member"><div class="team-avatar">⚗️</div><span><strong>Dipak Dhurve</strong> — Member</span></div><div class="team-member"><div class="team-avatar">🔮</div><span><strong>Sagar Mankar</strong> — Member</span></div><div class="team-member"><div class="team-avatar">⚡</div><span><strong>Saurabh Meshram</strong> — Member</span></div><div class="team-member"><div class="team-avatar">🌀</div><span><strong>Sanket Borkar</strong> — Member</span></div><p style="margin-top:1.5rem;text-align:center;font-family:var(--fi);color:#5b21b6"><em>Breakout Kit Hackathon · 2025</em></p>'}
+];
+var currentPage=0;
+var currentTypingSession=0;
+
+function typeWriterHTML(sourceHTML, targetEl, speed, sessionID, onComplete) {
+  var temp = document.createElement('div');
+  temp.innerHTML = sourceHTML;
+  var nodes = Array.from(temp.childNodes);
+  var i = 0;
+  function processNode() {
+    if(sessionID !== currentTypingSession) return;
+    if(i >= nodes.length) {
+      if(onComplete) onComplete();
+      return;
+    }
+    var node = nodes[i];
+    if(node.nodeType === 3) {
+      var text = node.nodeValue;
+      var textNode = document.createTextNode('');
+      targetEl.appendChild(textNode);
+      var c = 0;
+      function typeChar() {
+        if(sessionID !== currentTypingSession) return;
+        if(c < text.length) {
+          textNode.nodeValue += text.charAt(c);
+          c++;
+          setTimeout(typeChar, speed + (Math.random() * 10));
+        } else {
+          i++;
+          processNode();
+        }
+      }
+      typeChar();
+    } else if(node.nodeType === 1) {
+      var newEl = document.createElement(node.tagName);
+      Array.from(node.attributes).forEach(function(attr) { newEl.setAttribute(attr.name, attr.value); });
+      targetEl.appendChild(newEl);
+      typeWriterHTML(node.innerHTML, newEl, speed, sessionID, function(){
+        i++;
+        processNode();
+      });
+    } else {
+      i++;
+      processNode();
+    }
+  }
+  processNode();
+}
+
+function triggerTyping(pageIndex) {
+  currentTypingSession++;
+  var sessionID = currentTypingSession;
+  var p = document.getElementById('page-'+pageIndex);
+  if(!p) return;
+  var contentDiv = p.querySelector('.page-content');
+  contentDiv.innerHTML = '<h3></h3><div class="type-container"></div>';
+  
+  var h3 = contentDiv.querySelector('h3');
+  var typeContainer = contentDiv.querySelector('.type-container');
+  
+  typeWriterHTML(bookPages[pageIndex].title, h3, 25, sessionID, function() {
+    typeWriterHTML(bookPages[pageIndex].content, typeContainer, 10, sessionID);
+  });
+}
+
+function buildBook(){
+  var fb=document.getElementById('flipbook');fb.innerHTML='';
+  for(var i=0;i<bookPages.length;i++){
+    var page=document.createElement('div');
+    page.className='book-page';
+    page.style.backgroundImage='url('+PAGE_IMG+')';
+    page.style.zIndex=bookPages.length-i;
+    page.innerHTML='<div class="page-content"></div><span class="page-num">Page '+(i+1)+' of '+bookPages.length+'</span>';
+    page.id='page-'+i;
+    fb.appendChild(page);
+  }
+}
+
+function openBook(){
+  buildBook();
+  currentPage=0;
+  document.getElementById('book-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(function(){ triggerTyping(currentPage); }, 400);
+}
+function closeBook(){
+  document.getElementById('book-overlay').classList.remove('open');
+  document.body.style.overflow='';
+  currentTypingSession++; 
+}
+function nextPage(){
+  if(currentPage>=bookPages.length-1)return;
+  var p=document.getElementById('page-'+currentPage);
+  if(p)p.classList.add('page-flipped');
+  currentPage++;
+  setTimeout(function(){ triggerTyping(currentPage); }, 450);
+}
+function prevPage(){
+  if(currentPage<=0)return;
+  currentPage--;
+  var p=document.getElementById('page-'+currentPage);
+  if(p)p.classList.remove('page-flipped');
+  setTimeout(function(){ triggerTyping(currentPage); }, 450);
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeBook();if(e.key==='ArrowRight')nextPage();if(e.key==='ArrowLeft')prevPage()});
+
+/* ── Copy Install ─────────────────────────────────────────────── */
+function copyInstall(){
+  navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('install-cmd').textContent);
+  var btn=document.getElementById('copy-btn');
+  btn.textContent='Copied ✓';btn.classList.add('ok');
+  setTimeout(function(){btn.textContent='Copy';btn.classList.remove('ok')},2000);
+}
+</script>
+</body>
+</html>

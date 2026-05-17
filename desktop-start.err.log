@@ -1,0 +1,30 @@
+$ electron dist/main.js
+[27812:0514/155119.585:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: Access is denied. (0x5)
+[27812:0514/155119.586:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: Access is denied. (0x5)
+[27812:0514/155119.587:ERROR:net\disk_cache\cache_util_win.cc:25] Unable to move the cache: Access is denied. (0x5)
+[27812:0514/155119.587:ERROR:net\disk_cache\disk_cache.cc:284] Unable to create cache
+[27812:0514/155119.590:ERROR:gpu\ipc\host\gpu_disk_cache.cc:737] Gpu Cache Creation failed: -2
+[27812:0514/155119.593:ERROR:net\disk_cache\disk_cache.cc:284] Unable to create cache
+[27812:0514/155119.594:ERROR:gpu\ipc\host\gpu_disk_cache.cc:737] Gpu Cache Creation failed: -2
+[27812:0514/155119.594:ERROR:net\disk_cache\disk_cache.cc:284] Unable to create cache
+[27812:0514/155119.595:ERROR:gpu\ipc\host\gpu_disk_cache.cc:737] Gpu Cache Creation failed: -2
+[GENIE Server Error] node:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use 127.0.0.1:4747
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at node:net:2274:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2044:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 4747
+}
+
+Node.js v24.15.0

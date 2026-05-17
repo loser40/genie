@@ -1,0 +1,45 @@
+:root {
+  --bg: #05030f;
+  --bg2: #0d0921;
+  --surface: rgba(139, 92, 246, 0.08);
+  --surface-strong: rgba(15, 12, 32, 0.88);
+  --border: rgba(139, 92, 246, 0.25);
+  --border-h: rgba(139, 92, 246, 0.55);
+  --gold: #f4a825;
+  --gold-light: #ffd166;
+  --purple: #8b5cf6;
+  --purple-l: #a78bfa;
+  --purple-d: #c4b5fd;
+  --cyan: #06b6d4;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --orange: #f97316;
+  --gray: #6b7280;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --font-code: "JetBrains Mono", Consolas, monospace;
+  --font-display: Georgia, "Times New Roman", serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-code);
+  margin: 0;
+}
+
+button,
+input {
+  font-family: var(--font-code);
+}
+
+button {
+  cursor: pointer;
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GENIE Desktop</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body, #root {
+        width: 100%;
+        height: 100%;
+        background: transparent !important;
+        background-color: transparent !important;
+        overflow: hidden;
+        user-select: none;
+        -webkit-app-region: no-drag;
+      }
+    </style>
+    <script type="module" crossorigin src="./widget.bundle.js"></script>
+    <link rel="stylesheet" crossorigin href="./index.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

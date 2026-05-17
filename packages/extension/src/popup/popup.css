@@ -1,0 +1,142 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #0b0715;
+  color: #f5f3ff;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+  width: 360px;
+}
+
+.popup-shell {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+header {
+  align-items: start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.eyebrow {
+  color: #9be7d7;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 3px;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: 18px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.status {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+.status.online {
+  color: #b9f8d3;
+}
+
+.status.offline {
+  color: #ffb4b4;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: #c4b5fd;
+  font-size: 12px;
+}
+
+textarea {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: #f5f3ff;
+  font: 12px Consolas, monospace;
+  min-height: 66px;
+  outline: none;
+  padding: 9px;
+  resize: vertical;
+}
+
+.active-project,
+.capsule-card,
+.message {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+}
+
+.active-project {
+  border-color: rgba(168, 85, 247, 0.55);
+}
+
+.active-project span {
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.capsule-card span,
+.message {
+  color: #d8d0ff;
+  font-size: 12px;
+}
+
+.capsule-card b {
+  color: #9be7d7;
+  font-size: 13px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.clear-action {
+  background: rgba(127, 29, 29, 0.82);
+  grid-column: 1 / -1;
+}
+
+.clear-action:hover {
+  background: rgba(153, 27, 27, 0.94);
+}
+
+button {
+  background: #7c3aed;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 36px;
+}
+
+button:hover {
+  background: #6d28d9;
+}
+
+button:disabled {
+  background: rgba(124, 58, 237, 0.38);
+  cursor: not-allowed;
+}

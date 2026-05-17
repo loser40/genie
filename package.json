@@ -1,0 +1,28 @@
+{
+  "name": "genie",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.1.1",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "npm run dev -w @genie-ai/web",
+    "dev:server": "npm run dev -w @genie-ai/server",
+    "dev:cli": "npm run dev -w genie-ai",
+    "dev:mcp": "npm run dev -w @genie-ai/mcp",
+    "dev:desktop": "npm run dev -w @genie-ai/desktop"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  }
+}
