@@ -51,20 +51,14 @@ pnpm run build
 ```
 You should see **"Tasks: 6 successful"** when the build is done.
 
-### Step 5 — Install the Electron Desktop Engine
-The desktop floating widget requires Electron. Run this **once** after the build:
-```bash
-node node_modules/electron/install.js
-```
-
-### Step 6 — Link the CLI Globally
+### Step 5 — Link the CLI Globally
 This lets you type `genie` from ANY folder on your computer:
 ```bash
 cd packages/cli
 npm link
 ```
 
-### Step 7 — Verify the Installation
+### Step 6 — Verify the Installation
 Test that GENIE is working by running (you might need to open a new terminal):
 ```bash
 genie --version
@@ -200,12 +194,6 @@ You need to re-link the CLI:
 cd packages/cli && npm link
 ```
 
-### Error: `Electron binary not found`
-Run this command once from the root of the GENIE folder:
-```bash
-node node_modules/electron/install.js
-```
-
 ### Error: `EADDRINUSE: address already in use :4747`
 Another GENIE server is already running. Either close it or use a different port:
 ```bash
@@ -227,7 +215,6 @@ Make sure you use a valid model name for your provider (e.g., `gpt-4o` for OpenA
 # 1. Install everything (run once)
 pnpm install
 pnpm run build
-node node_modules/electron/install.js
 cd packages/cli && npm link
 
 # 2. Connect your AI (run once)
