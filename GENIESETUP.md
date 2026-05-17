@@ -63,7 +63,7 @@ Test that GENIE is working by running (you might need to open a new terminal):
 ```bash
 genie --version
 ```
-If it prints `1.0.0`, you are fully installed and ready! 🎉
+If it prints `1.1.0`, you are fully installed and ready! 🎉
 
 ---
 

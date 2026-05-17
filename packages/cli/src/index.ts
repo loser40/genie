@@ -17,7 +17,7 @@ const program = new Command();
 program
   .name('genie')
   .description('AI maintainability and code repair command center')
-  .version('1.0.0');
+  .version('1.1.0');
 
 program
   .command('setup')
